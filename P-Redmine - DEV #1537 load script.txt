@@ -1,0 +1,708 @@
+///$tab Main
+SET ThousandSep='.';
+SET DecimalSep=',';
+SET MoneyThousandSep='.';
+SET MoneyDecimalSep=',';
+SET MoneyFormat='R$#.##0,00;-R$#.##0,00';
+SET TimeFormat='hh:mm:ss';
+SET DateFormat='DD/MM/YYYY';
+SET TimestampFormat='DD/MM/YYYY hh:mm:ss[.fff]';
+SET FirstWeekDay=6;
+SET BrokenWeeks=1;
+SET ReferenceDay=0;
+SET FirstMonthOfYear=1;
+SET CollationLocale='pt-BR';
+SET CreateSearchIndexOnReload=1;
+SET MonthNames='jan;fev;mar;abr;mai;jun;jul;ago;set;out;nov;dez';
+SET LongMonthNames='janeiro;fevereiro;março;abril;maio;junho;julho;agosto;setembro;outubro;novembro;dezembro';
+SET DayNames='seg;ter;qua;qui;sex;sáb;dom';
+SET LongDayNames='segunda-feira;terça-feira;quarta-feira;quinta-feira;sexta-feira;sábado;domingo';
+SET NumericalAbbreviation='3:k;6:M;9:G;12:T;15:P;18:E;21:Z;24:Y;-3:m;-6:μ;-9:n;-12:p;-15:f;-18:a;-21:z;-24:y';
+
+
+///$tab Configurações
+//Configuração de Ambiente
+
+SET vAmbiente = Produção;
+//SET vAmbiente = Desenvolvimento;
+
+trace Aplicação do ambiente de $(vAmbiente);
+
+if '$(vAmbiente)' = 'Produção' then 	 
+    SET v_PathOrigem = 'lib://d_P-Projetos:DataFiles/REDMINE_';
+ELSE
+    SET v_PathOrigem = 'lib://d_P-Projetos:DataFiles/REDMINE-DEV_';
+ENDIF
+
+LET vExistePlanejamento = IsNull(QvdCreateTime('$(v_PathOrigem)FATO_PLANEJAMENTO.QVD'));
+LET vExisteHistoricoRealizado = IsNull(QvdCreateTime('$(v_PathOrigem)FATO_HISTORICO_REALIZADO.QVD'));
+
+//ano atual e o passado
+vDataInicio = 2022
+
+///$tab d_Cenário_Histórico
+NoConcatenate
+Cenário_Histórico:
+LOAD * INLINE [
+%Chave_Cenário_Histórico, Cenário_Histórico
+1, Planejado
+2, Realizado
+3, Atual
+];
+///$tab d_Calendário
+NoConcatenate
+Calendário:
+LOAD
+	AutoNumberHash128(Data) AS %Chave_Calendário,
+    Data AS Data_Numero,
+    Date(Data) AS Data,
+    DIA,
+    MES,
+    "NÚMERO MÊS",
+    ANO,
+    "DIA TRIMESTRE",
+    "DIA ANO",
+    "MES ANO",
+    "ANO MES",
+    QUARTER,
+    SEMANA,
+    TRIMESTRE,
+    SEMESTRE,
+    "DIA SEMANA",
+    "DATA BASE",
+    "DATA BASE INICIO",
+    "N° DIA SEMANA"
+FROM [$(v_PathOrigem)CALENDARIO.QVD]
+(qvd);
+
+///$tab d_Responsável_Apontamento
+NoConcatenate
+Responsáveis_Apontamentos:
+LOAD
+	AutoNumberHash128(ID_RESPONSAVEL) AS %Chave_Responsável,
+    ID_RESPONSAVEL,
+    //LOGIN_RESPONSAVEL,
+    NOME_RESPONSAVEL,
+    EQUIPE
+FROM [$(v_PathOrigem)USUARIO.QVD]
+(qvd);
+
+///$tab d_Responsável_Tarefa
+NoConcatenate
+Responsáveis_Tarefas:
+LOAD
+	AutoNumberHash128(ID_RESPONSAVEL) AS %Chave_Responsável_Tarefas,
+    ID_RESPONSAVEL AS ID_RESPONSAVEL_TAREFA,
+    //LOGIN_RESPONSAVEL,
+    NOME_RESPONSAVEL AS NOME_RESPONSAVEL_TAREFA,
+    If(IsNull(NOME_RESPONSAVEL),'Tarefa Sem Responsável',NOME_RESPONSAVEL) AS NOME_RESPONSAVEL_TAREFA_TRATADO,
+    EQUIPE AS EQUIPE_TAREFA,
+    If(IsNull(EQUIPE),'SEM EQUIPE',EQUIPE) AS EQUIPE_TAREFA_TRATADO
+FROM [$(v_PathOrigem)USUARIO.QVD]
+(qvd);
+///$tab d_Responsável_Alteração
+NoConcatenate
+Responsáveis_Alteração:
+LOAD
+	AutoNumberHash128(ID_RESPONSAVEL) AS %Chave_Responsável_Alteração,
+    ID_RESPONSAVEL AS ID_RESPONSAVEL_ALTERACAO,
+    //LOGIN_RESPONSAVEL,
+    NOME_RESPONSAVEL AS NOME_RESPONSAVEL_ALTERACAO,
+    If(IsNull(NOME_RESPONSAVEL),'Tarefa Sem Responsável',NOME_RESPONSAVEL) AS NOME_RESPONSAVEL_TAREFA_ALTERACAO,
+    EQUIPE AS EQUIPE_ALTERACAO,
+    If(IsNull(EQUIPE),'SEM EQUIPE',EQUIPE) AS EQUIPE_ALTERACAO_TRATADO
+FROM [$(v_PathOrigem)USUARIO.QVD]
+(qvd);
+///$tab d_Sprint
+NoConcatenate
+Sprints:
+LOAD
+	AutoNumberHash128(ID_SPRINT) AS %Chave_Sprint,
+    ID_SPRINT,
+    NOME_SPRINT,
+    INICIO_SPRINT,
+    IF(ISNULL(INICIO_SPRINT), 0, INICIO_SPRINT) AS INICIO_SPRINT_TRATADO,
+    YEAR(INICIO_SPRINT)&'/'&MONTH(INICIO_SPRINT) AS ANO_MES_SPRINT,
+    MES_SPRINT
+FROM [$(v_PathOrigem)SPRINTS.QVD]
+(qvd);
+
+
+///$tab d_Versão
+NoConcatenate
+Versão:
+LOAD
+	AutoNumberHash128(ID_VERSAO) AS %Chave_Versão,
+    ID_VERSAO,
+    NOME_VERSAO,
+    DESCRICAO_VERSAO,
+    DATA_VERSAO
+FROM [$(v_PathOrigem)VERSAO.QVD]
+(qvd);
+
+
+///$tab d_Tipo_Projeto
+NoConcatenate
+TIPO_PROJETO:
+LOAD
+    ID_TIPO_PROJETO,
+    TIPO_PROJETO
+FROM [$(v_PathOrigem)TIPO_PROJETO.QVD]
+(qvd);
+
+
+///$tab d_Projeto
+NoConcatenate
+Projetos:
+LOAD
+	AutoNumberHash128(ID_PROJETO) AS %Chave_Projeto,
+    ID_PROJETO,
+    NOME_PROJETO,
+    PAI_PROJETO,
+    ID_TIPO_PROJETO
+FROM [$(v_PathOrigem)PROJETOS.QVD]
+(qvd);
+
+
+///$tab d_Status_Tarefa
+NoConcatenate
+Situação:
+LOAD
+    AutoNumberHash128(ID_STATUS) AS %Chave_Situação,
+    ID_STATUS,
+    STATUS,
+    ORDEM_STATUS
+FROM [$(v_PathOrigem)STATUS_TAREFA.QVD]
+(qvd);
+
+///$tab d_Tipo_Tarefa
+NoConcatenate
+Tipo_Tarefa:
+LOAD
+    AutoNumberHash128(ID_TIPO_TAREFA) AS %Chave_Tipo_Tarefa,
+    ID_TIPO_TAREFA,
+    TIPO_TAREFA
+FROM [$(v_PathOrigem)TIPO_TAREFA.QVD]
+(qvd);
+
+///$tab f_Apontamentos (1)
+NoConcatenate
+Apontamentos:
+LOAD
+	ROWNO() AS %Chave_Apontamento,
+    ID_TAREFA,
+    ID_APONTAMENTO,
+    ID_PROJETO,
+    //ID_AUTOR_APONTAMENTO, //Quem apontou pelo responsável
+    ID_RESPONSAVEL_APONTAMENTO,
+    HORAS_APONTADAS,
+    //HORAS_APONTADAS_REDMINE,
+    HORA_INICIAL_APONTAMENTO,
+    HORA_FINAL_APONTAMENTO,
+    COMENTARIO_APONTAMENTO,
+    DATA_APONTAMENTO,
+    ID_SPRINT,
+    ID_SPRINT_MES_BASE_APONTAMENTO,
+    ID_VERSAO,
+    ID_STATUS,
+    ID_TIPO_TAREFA,
+    ID_RESPONSAVEL_TAREFA
+FROM [$(v_PathOrigem)APONTAMENTOS.QVD]
+(qvd);
+
+///$tab f_Esforço (2)
+NoConcatenate
+Esforço:
+LOAD
+	ROWNO() AS %Chave_Esforço,
+    ID_ESFORCO,
+    ID_SPRINT,
+    ID_USUARIO,
+    DATA_ESFORCO,
+    ESFORCO_DISPONIVEL
+FROM [$(v_PathOrigem)ESFORCO.QVD]
+(qvd);
+
+
+///$tab f_Apontamentos_Por_Sprint (3)
+NoConcatenate
+Apontamentos_Por_Sprint:
+LOAD
+    RowNo() AS %Chave_Apontamento_Por_Sprint,
+    3 AS CENARIO_HISTORICO, // 3 = cenário atual
+    ID_TAREFA,
+    ID_PROJETO,
+    HORAS_APONTADAS_TAREFAS_MES_BASE,
+    ID_SPRINT_MES_BASE_APONTAMENTO,
+    ID_VERSAO,
+    ID_RESPONSAVEL_APONTAMENTO_MES_BASE,
+    //HORAS_APONTADAS_TAREFA,
+    ID_RESPONSAVEL_TAREFA_MES_BASE,
+    ID_STATUS,
+    ID_TIPO_TAREFA
+FROM [$(v_PathOrigem)APONTAMENTOS_POR_SPRINT.QVD]
+(qvd);
+
+///$tab f_Alterações_Tarefas (6)
+Alterações_Tarefas:
+LOAD
+	RowNo() AS %Chave_Alterações_Tarefas,
+    ID_STATUS,
+    ID_TAREFA,
+    RESPONSAVEL_ALTERACAO,
+    ID_RESPONSAVEL_TAREFA,
+    DATA_ALTERACAO,
+    ID_SPRINT,
+    ID_PROJETO,
+    PORCENTAGEM_CONCLUSAO_ALTERADA,
+    TEMPO_ESTIMADO_ALTERADO,
+    TAREFA_APROVADA
+FROM [$(v_PathOrigem)DIARIO_ALTERACOES_TAREFAS.QVD]
+(qvd);
+
+
+///$tab d_f_Tarefa (4)
+NoConcatenate
+Tarefas:
+LOAD
+	AutoNumberHash128(ID_TAREFA) AS %Chave_Tarefa,
+    3 AS CENARIO_HISTORICO, // 3 = cenário atual
+    RowNo() AS %Chave_Fato_Tarefa,
+    ID_TAREFA,
+    ID_TAREFA_ORIGEM_REDMINE,
+    //ID_PAI_TAREFA,
+    //ID_TAREFA AS ID_TAREFA_BASE_MES_SPRINT,
+    ID_PROJETO,
+    If(IsNull(ID_SPRINT), '-1', ID_SPRINT) AS ID_SPRINT,
+    ID_VERSAO,
+    //ID_AUTOR,
+    ID_STATUS,
+    //ID_CATEGORIA,
+    ID_RESPONSAVEL_TAREFA,
+    ID_TIPO_TAREFA,
+    TITULO_TAREFA,
+    DESCRICAO_TAREFA,
+    DATA_PREVISTA,
+    DATA_INICIO,
+    //ID_PRIORIDADE,
+    PORCENTAGEM_COMPLETADO,
+    HORAS_ESTIMADAS,
+    HORAS_APONTADAS_TAREFA,
+    FLAG_TAREFA_FILHA,
+    FLAG_CONCLUIDO,
+    FLAG_ENTREGA,
+    FLAG_ESTOURADO,
+    FLAG_ESTOURADO_CONCLUIDO,
+    FLAG_ATRASADO
+FROM [$(v_PathOrigem)TAREFAS.QVD]
+(qvd);
+
+/* allan 30/08/2022
+removido para ajuste de código, devo remover no futuro se não houver problema na atualização
+// salva um QVD usado como referência para salvar o que estiver sendo planejado no Gera Planejamento
+NoConcatenate
+ORIGEM_PLANEJAMENTO:
+LOAD
+	ID_TAREFA AS ID_TAREFA_PLANEJAMENTO,
+	ID_PROJETO AS ID_PROJETO_PLANEJAMENTO,
+	ID_SPRINT AS ID_SPRINT_PLANEJAMENTO,
+	ID_VERSAO AS ID_VERSAO_PLANEJAMENTO,
+	ID_TIPO_TAREFA AS ID_TIPO_TAREFA_PLANEJAMENTO,
+	ID_STATUS AS ID_STATUS_PLANEJAMENTO,
+	ID_RESPONSAVEL_TAREFA AS ID_RESPONSAVEL_TAREFA_PLANEJAMENTO,
+    HORAS_ESTIMADAS AS HORAS_ESTIMADAS_PLANEJAMENTO,
+    HORAS_APONTADAS_TAREFA AS HORAS_APONTADAS_TAREFA_PLANEJAMENTO,
+    PORCENTAGEM_COMPLETADO AS PORCENTAGEM_COMPLETADO_PLANEJAMENTO,
+    FLAG_ESTOURADO AS FLAG_ESTOURADO_PLANEJAMENTO
+RESIDENT Tarefas;
+
+STORE ORIGEM_PLANEJAMENTO INTO [$(v_PathOrigem)ORIGEM_PLANEJAMENTO.QVD];
+DROP TABLE ORIGEM_PLANEJAMENTO;
+*/
+///$tab f_Esforço_Agrupado (5)
+NoConcatenate
+Esforço_Agrupado:
+LOAD
+	ROWNO() AS %Chave_Esforço_Agrupado,
+    ID_PROJETO,
+    ID_SPRINT,
+    ID_USUARIO,
+    ESFORCO_DISPONIVEL_MES,
+    ESFORCO_EQUIPE_DISPONIVEL_MES,
+    ID_TAREFA,
+    ID_TIPO_TAREFA,
+    ID_VERSAO,
+    ID_STATUS,
+    ID_TIPO_PROJETO
+FROM [$(v_PathOrigem)ESFORCO_AGRUPADO.QVD]
+(qvd);
+
+
+///$tab f_Historico_Planejado (7)
+If $(vExistePlanejamento) = 0 Then
+
+Fato_Historico_Planejado:
+LOAD
+	AutoNumberHash128(ID_SPRINT_PLANEJAMENTO,ID_TAREFA_PLANEJAMENTO) AS %Chave_Fato_Historico_Planejado,
+    1 AS CENARIO_HISTORICO, // 1 = cenário planejado
+	ID_TAREFA_PLANEJAMENTO,
+	ID_PROJETO_PLANEJAMENTO,
+	ID_SPRINT_PLANEJAMENTO,
+	ID_VERSAO_PLANEJAMENTO,
+	ID_TIPO_TAREFA_PLANEJAMENTO,
+	ID_STATUS_PLANEJAMENTO,
+	ID_RESPONSAVEL_TAREFA_PLANEJAMENTO,
+    HORAS_ESTIMADAS_PLANEJAMENTO,
+    HORAS_APONTADAS_TAREFA_PLANEJAMENTO,
+    //0 AS PORCENTAGEM_COMPLETADO_PLANEJAMENTO,
+    PORCENTAGEM_COMPLETADO_PLANEJAMENTO,
+    FLAG_ESTOURADO_PLANEJAMENTO
+FROM [$(v_PathOrigem)FATO_PLANEJAMENTO.QVD]
+(qvd);
+
+EndIf
+///$tab f_Historico_Realizado (8)
+If $(vExisteHistoricoRealizado) = 0 Then
+
+Fato_Historico_Realizado:
+LOAD
+	AutoNumberHash128(ID_SPRINT_REALIZADO,ID_TAREFA_REALIZADO) AS %Chave_Fato_Historico_Realizado,
+    2 AS CENARIO_HISTORICO, // 2 = cenário realizado
+    ID_TAREFA_REALIZADO,
+    ID_PROJETO_REALIZADO,
+    ID_SPRINT_REALIZADO,
+    ID_VERSAO_REALIZADO,
+    ID_STATUS_REALIZADO,
+    ID_TIPO_TAREFA_REALIZADO,
+    ID_RESPONSAVEL_TAREFA_REALIZADO,
+    HORAS_ESTIMADAS_REALIZADO,
+    HORAS_APONTADAS_TAREFA_REALIZADO,
+    HORAS_APONTADAS_TAREFA_SPRINT AS HORAS_APONTADAS_TAREFA_SPRINT_REALIZADO,
+    PORCENTAGEM_COMPLETADO_REALIZADO,
+    FLAG_ESTOURADO_REALIZADO
+FROM [$(v_PathOrigem)FATO_HISTORICO_REALIZADO.QVD]
+(qvd);
+
+EndIf
+///$tab Link Table
+// Fato 01: Apontamentos
+NoConcatenate
+LINK_TABLE_TMP:
+LOAD
+1 AS TIPO_FATO,
+%Chave_Apontamento,
+ID_TAREFA AS TAREFA,
+ID_STATUS AS SITUACAO,
+ID_TIPO_TAREFA AS TIPO_TAREFA,
+ID_RESPONSAVEL_APONTAMENTO AS RESPONSAVEL,
+ID_RESPONSAVEL_TAREFA AS RESPONSAVEL_TAREFA,
+ID_SPRINT AS SPRINT,
+ID_SPRINT_MES_BASE_APONTAMENTO AS SPRINT_MES_BASE,
+ID_VERSAO AS VERSAO,
+MONTH(DATA_APONTAMENTO) AS MES_SPRINT,
+ID_PROJETO AS PROJETO,
+DATA_APONTAMENTO AS DATA
+RESIDENT Apontamentos;
+
+DROP FIELDS 
+ID_TAREFA,
+ID_RESPONSAVEL_TAREFA,
+ID_RESPONSAVEL_APONTAMENTO,
+ID_STATUS,
+ID_TIPO_TAREFA,
+ID_SPRINT,
+ID_SPRINT_MES_BASE_APONTAMENTO,
+ID_VERSAO,
+ID_PROJETO,
+DATA_APONTAMENTO
+FROM Apontamentos;
+
+// Fato 02: Esforço
+CONCATENATE(LINK_TABLE_TMP)
+LOAD
+2 AS TIPO_FATO,
+%Chave_Esforço,
+ID_USUARIO AS RESPONSAVEL,
+ID_USUARIO AS RESPONSAVEL_TAREFA,
+ID_SPRINT AS SPRINT,
+//MONTH(DATA_ESFORCO) AS MES_SPRINT,
+DATA_ESFORCO AS DATA
+RESIDENT Esforço;
+
+DROP FIELDS 
+ID_USUARIO,
+ID_SPRINT,
+DATA_ESFORCO
+FROM Esforço;
+
+// Fato 03: Apontamentos agrupados por sprint
+CONCATENATE(LINK_TABLE_TMP)
+LOAD
+3 AS TIPO_FATO,
+%Chave_Apontamento_Por_Sprint,
+ID_RESPONSAVEL_APONTAMENTO_MES_BASE AS RESPONSAVEL,
+ID_RESPONSAVEL_TAREFA_MES_BASE AS RESPONSAVEL_TAREFA,
+ID_PROJETO AS PROJETO,
+ID_TAREFA AS TAREFA,
+ID_STATUS AS SITUACAO,
+ID_TIPO_TAREFA AS TIPO_TAREFA,
+ID_SPRINT_MES_BASE_APONTAMENTO AS SPRINT,
+ID_VERSAO AS VERSAO,
+CENARIO_HISTORICO
+//MONTH(DATA_ESFORCO) AS MES_SPRINT,
+RESIDENT Apontamentos_Por_Sprint;
+
+DROP FIELDS 
+ID_RESPONSAVEL_APONTAMENTO_MES_BASE,
+ID_RESPONSAVEL_TAREFA_MES_BASE,
+ID_PROJETO,
+ID_TAREFA,
+ID_STATUS,
+ID_TIPO_TAREFA,
+ID_SPRINT_MES_BASE_APONTAMENTO,
+ID_VERSAO,
+CENARIO_HISTORICO
+FROM Apontamentos_Por_Sprint;
+
+// Fato 04: Tarefas (Situação)
+Concatenate(LINK_TABLE_TMP)
+LOAD
+4 AS TIPO_FATO,
+%Chave_Fato_Tarefa,
+ID_TAREFA AS TAREFA,
+ID_PROJETO AS PROJETO,
+ID_SPRINT AS SPRINT,
+ID_VERSAO AS VERSAO,
+ID_TIPO_TAREFA AS TIPO_TAREFA,
+ID_STATUS AS SITUACAO,
+ID_RESPONSAVEL_TAREFA AS RESPONSAVEL_TAREFA,
+CENARIO_HISTORICO
+RESIDENT Tarefas;
+
+DROP FIELDS
+%Chave_Fato_Tarefa,
+ID_PROJETO,
+ID_SPRINT,
+ID_VERSAO,
+ID_TIPO_TAREFA,
+ID_STATUS,
+ID_RESPONSAVEL_TAREFA,
+CENARIO_HISTORICO
+FROM Tarefas;
+
+// Fato 05: Esforço Agrupado (Para Planejamento)
+CONCATENATE(LINK_TABLE_TMP)
+LOAD
+5 AS TIPO_FATO,
+%Chave_Esforço_Agrupado,
+ID_USUARIO AS RESPONSAVEL,
+ID_USUARIO AS RESPONSAVEL_TAREFA,
+ID_SPRINT AS SPRINT,
+ID_PROJETO AS PROJETO,
+ID_TIPO_PROJETO AS TIPO_PROJETO,
+ID_TAREFA AS TAREFA,
+ID_TIPO_TAREFA AS TIPO_TAREFA,
+ID_VERSAO AS VERSAO,
+ID_STATUS AS SITUACAO
+RESIDENT Esforço_Agrupado;
+
+DROP FIELDS 
+ID_USUARIO,
+ID_SPRINT,
+ID_PROJETO,
+ID_TIPO_PROJETO,
+ID_TAREFA,
+ID_TIPO_TAREFA,
+ID_VERSAO,
+ID_STATUS
+FROM Esforço_Agrupado;
+
+// Fato 06: Alterações Tarefas (Para avaliar mudanças nos campos das tarefas)
+CONCATENATE(LINK_TABLE_TMP)
+LOAD
+6 AS TIPO_FATO,
+%Chave_Alterações_Tarefas,
+NUM#(RESPONSAVEL_ALTERACAO) AS RESPONSAVEL_ALTERACAO,
+ID_RESPONSAVEL_TAREFA AS RESPONSAVEL_TAREFA,
+DATE(FLOOR(DATA_ALTERACAO)) AS DATA,
+NUM#(ID_SPRINT) AS SPRINT,
+NUM#(ID_TAREFA) AS TAREFA,
+NUM#(ID_PROJETO) AS PROJETO,
+NUM#(ID_STATUS) AS SITUACAO
+RESIDENT Alterações_Tarefas;
+
+DROP FIELDS 
+RESPONSAVEL_ALTERACAO,
+ID_RESPONSAVEL_TAREFA,
+//DATA_ALTERACAO,
+ID_SPRINT,
+ID_TAREFA,
+ID_PROJETO,
+ID_STATUS
+FROM Alterações_Tarefas;
+
+// Link Table
+NoConcatenate
+Link:
+LOAD
+TIPO_FATO,
+%Chave_Apontamento,
+%Chave_Esforço,
+%Chave_Apontamento_Por_Sprint,
+%Chave_Fato_Tarefa,
+%Chave_Esforço_Agrupado,
+%Chave_Alterações_Tarefas,
+//%Chave_Fato_Planejamento_Tarefas,
+AutoNumberHash128(RESPONSAVEL) AS %Chave_Responsável,
+AutoNumberHash128(RESPONSAVEL_TAREFA) AS %Chave_Responsável_Tarefas,
+AutoNumberHash128(RESPONSAVEL_ALTERACAO) AS %Chave_Responsável_Alteração,
+AutoNumberHash128(TAREFA) AS %Chave_Tarefa,
+AutoNumberHash128(SITUACAO) AS %Chave_Situação,
+AutoNumberHash128(TIPO_TAREFA) AS %Chave_Tipo_Tarefa,
+AutoNumberHash128(SPRINT) AS %Chave_Sprint,
+AutoNumberHash128(VERSAO) AS %Chave_Versão,
+AutoNumberHash128(PROJETO) AS %Chave_Projeto,
+AutoNumberHash128(DATA) AS %Chave_Calendário,
+CENARIO_HISTORICO AS %Chave_Cenário_Histórico
+RESIDENT LINK_TABLE_TMP;
+
+DROP TABLE LINK_TABLE_TMP;
+
+//*******************************************************************************
+
+// Fato 07: Histórico Planejado (se houver)
+If $(vExistePlanejamento) = 0 Then
+
+LINK_TABLE_TMP:
+LOAD
+7 AS TIPO_FATO,
+%Chave_Fato_Historico_Planejado,
+ID_TAREFA_PLANEJAMENTO AS TAREFA,
+ID_PROJETO_PLANEJAMENTO AS PROJETO,
+ID_SPRINT_PLANEJAMENTO AS SPRINT,
+ID_VERSAO_PLANEJAMENTO AS VERSAO,
+ID_TIPO_TAREFA_PLANEJAMENTO AS TIPO_TAREFA,
+ID_STATUS_PLANEJAMENTO AS SITUACAO,
+ID_RESPONSAVEL_TAREFA_PLANEJAMENTO AS RESPONSAVEL_TAREFA,
+CENARIO_HISTORICO
+RESIDENT Fato_Historico_Planejado;
+
+DROP FIELDS 
+ID_TAREFA_PLANEJAMENTO,
+ID_PROJETO_PLANEJAMENTO,
+ID_SPRINT_PLANEJAMENTO,
+ID_VERSAO_PLANEJAMENTO,
+ID_TIPO_TAREFA_PLANEJAMENTO,
+ID_STATUS_PLANEJAMENTO,
+ID_RESPONSAVEL_TAREFA_PLANEJAMENTO,
+CENARIO_HISTORICO
+FROM Fato_Historico_Planejado;
+
+Concatenate(Link)
+LOAD
+TIPO_FATO,
+%Chave_Fato_Historico_Planejado,
+//AutoNumberHash128(RESPONSAVEL) AS %Chave_Responsável,
+AutoNumberHash128(RESPONSAVEL_TAREFA) AS %Chave_Responsável_Tarefas,
+//AutoNumberHash128(RESPONSAVEL_ALTERACAO) AS %Chave_Responsável_Alteração,
+AutoNumberHash128(TAREFA) AS %Chave_Tarefa,
+AutoNumberHash128(SITUACAO) AS %Chave_Situação,
+AutoNumberHash128(TIPO_TAREFA) AS %Chave_Tipo_Tarefa,
+AutoNumberHash128(SPRINT) AS %Chave_Sprint,
+AutoNumberHash128(VERSAO) AS %Chave_Versão,
+AutoNumberHash128(PROJETO) AS %Chave_Projeto,
+//AutoNumberHash128(DATA) AS %Chave_Calendário,
+CENARIO_HISTORICO AS %Chave_Cenário_Histórico
+RESIDENT LINK_TABLE_TMP;
+
+DROP TABLE LINK_TABLE_TMP;
+
+EndIf
+
+//*******************************************************************************
+
+// Fato 08: Histórico Realizado (se houver)
+If $(vExisteHistoricoRealizado) = 0 Then
+
+LINK_TABLE_TMP:
+LOAD
+8 AS TIPO_FATO,
+%Chave_Fato_Historico_Realizado,
+ID_TAREFA_REALIZADO AS TAREFA,
+ID_PROJETO_REALIZADO AS PROJETO,
+ID_SPRINT_REALIZADO AS SPRINT,
+ID_VERSAO_REALIZADO AS VERSAO,
+ID_TIPO_TAREFA_REALIZADO AS TIPO_TAREFA,
+ID_STATUS_REALIZADO AS SITUACAO,
+ID_RESPONSAVEL_TAREFA_REALIZADO AS RESPONSAVEL_TAREFA,
+CENARIO_HISTORICO
+RESIDENT Fato_Historico_Realizado;
+
+DROP FIELDS 
+ID_TAREFA_REALIZADO,
+ID_PROJETO_REALIZADO,
+ID_SPRINT_REALIZADO,
+ID_VERSAO_REALIZADO,
+ID_TIPO_TAREFA_REALIZADO,
+ID_STATUS_REALIZADO,
+ID_RESPONSAVEL_TAREFA_REALIZADO,
+CENARIO_HISTORICO
+FROM Fato_Historico_Realizado;
+
+Concatenate(Link)
+LOAD
+TIPO_FATO,
+%Chave_Fato_Historico_Realizado,
+//AutoNumberHash128(RESPONSAVEL) AS %Chave_Responsável,
+AutoNumberHash128(RESPONSAVEL_TAREFA) AS %Chave_Responsável_Tarefas,
+//AutoNumberHash128(RESPONSAVEL_ALTERACAO) AS %Chave_Responsável_Alteração,
+AutoNumberHash128(TAREFA) AS %Chave_Tarefa,
+AutoNumberHash128(SITUACAO) AS %Chave_Situação,
+AutoNumberHash128(TIPO_TAREFA) AS %Chave_Tipo_Tarefa,
+AutoNumberHash128(SPRINT) AS %Chave_Sprint,
+AutoNumberHash128(VERSAO) AS %Chave_Versão,
+AutoNumberHash128(PROJETO) AS %Chave_Projeto,
+//AutoNumberHash128(DATA) AS %Chave_Calendário,
+CENARIO_HISTORICO AS %Chave_Cenário_Histórico
+RESIDENT LINK_TABLE_TMP;
+
+DROP TABLE LINK_TABLE_TMP;
+
+EndIf
+///$tab audit_Sprint_Problema
+NoConcatenate
+Sprints_Com_Problema:
+LOAD
+    SPRINT_PROBLEMA,
+    ID_TAREFA_SPRINT_PROBLEMA,
+    TAREFA_SPRINT_PROBLEMA,
+    PROJETO_SPRINT_PROBLEMA,
+    PROJETO_TAREFA_PROBLEMA
+FROM [$(v_PathOrigem)SPRINTS_COM_PROBLEMA.QVD]
+(qvd);
+
+///$tab audit_Sprints_Planejadas
+If $(vManualSemPlanejamentoAinda) <> 1 Then
+
+Sprints_Planejadas_Aux:
+LOAD
+    ID_SPRINT,
+    FLAG_SPRINT_PLANEJADA
+FROM [lib://d_P-Projetos:DataFiles/REDMINE_SPRINTS_PLANEJADAS.QVD]
+(qvd);
+
+RIGHT JOIN (Sprints_Planejadas_Aux)
+LOAD
+	ID_SPRINT
+RESIDENT Sprints;
+
+NoConcatenate
+Sprints_Planejadas:
+LOAD
+    ID_SPRINT,
+    IF(ISNULL(FLAG_SPRINT_PLANEJADA), 0, 1) AS FLAG_SPRINT_PLANEJADA
+Resident Sprints_Planejadas_Aux;
+
+Drop Table Sprints_Planejadas_Aux;
+
+EndIF
