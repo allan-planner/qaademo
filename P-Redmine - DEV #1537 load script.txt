@@ -23,8 +23,8 @@ SET NumericalAbbreviation='3:k;6:M;9:G;12:T;15:P;18:E;21:Z;24:Y;-3:m;-6:μ;-9:n;
 ///$tab Configurações
 //Configuração de Ambiente
 
-SET vAmbiente = Produção;
-//SET vAmbiente = Desenvolvimento;
+//SET vAmbiente = Produção;
+SET vAmbiente = Desenvolvimento;
 
 trace Aplicação do ambiente de $(vAmbiente);
 
