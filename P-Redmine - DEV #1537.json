@@ -384,7 +384,7 @@ FIELDS
 {"qName":"PROJETO_TAREFA_PROBLEMA","qCardinal":0,"qTags":["$text"],"qSrcTables":["Sprints_Com_Problema"]}
 {"qName":"FLAG_SPRINT_PLANEJADA","qCardinal":2,"qTags":["$numeric","$integer"],"qSrcTables":["Sprints_Planejadas"]}
 
-OBJECT PROPETIES 
+OBJECT PROPERTIES 
 {"qProperty":{"qInfo":{"qId":"FGd","qType":"pivot-table"},"qExtendsId":"ebb1bd26-50ff-416c-8bf7-d11277a869da","qMetaDef":[]},"qChildren":[]}
 {"qProperty":{"qInfo":{"qId":"nRbPje","qType":"filterpane"},"qExtendsId":"c3ff260d-68be-42a5-b7e7-392261ff682b","qMetaDef":[]},"qChildren":[]}
 {"qProperty":{"qInfo":{"qId":"TLQCDLY","qType":"qlik-multi-kpi"},"qExtendsId":"09d88b2c-b866-471f-b69f-3e44811c1c8a","qMetaDef":[]},"qChildren":[]}
