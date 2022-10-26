@@ -1,6 +1,6 @@
 
 SHEETS
-{"qInfo":{"qId":"2452a75f-927c-4f53-9d2f-2ec9045a9d38","qType":"sheet"},"qMeta":{"title":"Overhead Mensal D-1 (Tarefa 806)","description":"Tipo Fato = 1,2 (Apontamento, Esfor\u00e7o)","createdDate":"2022-07-01T14:23:15.056Z","modifiedDate":"2022-10-24T19:46:54.137Z","published":true,"publishTime":"2022-10-24T19:46:49.814Z","approved":false,"qSize":-1,"sourceObject":"","draftObject":"","_resourcetype":"app.object","_objecttype":"sheet","id":"2452a75f-927c-4f53-9d2f-2ec9045a9d38","owner":"auth0|f013a7aca58cf3f667ac8d107ed5f1e034fc1fc1abd6a369297fa7b9490415dc","ownerId":"NsmEdWylVj3-n1nAJSL2ju800hgxk3Dd","privileges":["read","publish"]},"qData":[]}
+{"qInfo":{"qId":"2452a75f-927c-4f53-9d2f-2ec9045a9d38","qType":"sheet"},"qMeta":{"title":"Overhead Mensal D-1 (Tarefa 806)","description":"Tipo Fato = 1,2 (Apontamento, Esfor\u00e7o)","createdDate":"2022-07-01T14:23:15.056Z","modifiedDate":"2022-10-25T17:06:01.383Z","published":false,"publishTime":true,"approved":false,"qSize":-1,"sourceObject":"","draftObject":"","_resourcetype":"app.object","_objecttype":"sheet","id":"2452a75f-927c-4f53-9d2f-2ec9045a9d38","owner":"auth0|f013a7aca58cf3f667ac8d107ed5f1e034fc1fc1abd6a369297fa7b9490415dc","ownerId":"NsmEdWylVj3-n1nAJSL2ju800hgxk3Dd","privileges":["read","update","delete","publish"]},"qData":[]}
 {"qInfo":{"qId":"5903ea0c-4ff1-47f9-8333-7c975a996c65","qType":"sheet"},"qMeta":{"title":"Minha nova pasta (1)","description":"","_resourcetype":"app.object","_objecttype":"sheet","id":"5903ea0c-4ff1-47f9-8333-7c975a996c65","approved":false,"published":false,"owner":"auth0|f013a7aca58cf3f667ac8d107ed5f1e034fc1fc1abd6a369297fa7b9490415dc","ownerId":"NsmEdWylVj3-n1nAJSL2ju800hgxk3Dd","createdDate":"2022-10-24T11:20:12.310Z","modifiedDate":"2022-10-24T17:47:07.366Z","privileges":["read","update","delete","publish"]},"qData":[]}
 {"qInfo":{"qId":"c796fc93-816a-4329-ba92-d25b14dad337","qType":"sheet"},"qMeta":{"title":"Planejamento  x Realizado (1)","description":"","_resourcetype":"app.object","_objecttype":"sheet","id":"c796fc93-816a-4329-ba92-d25b14dad337","approved":false,"published":false,"owner":"auth0|f013a7aca58cf3f667ac8d107ed5f1e034fc1fc1abd6a369297fa7b9490415dc","ownerId":"NsmEdWylVj3-n1nAJSL2ju800hgxk3Dd","createdDate":"2022-10-21T14:34:40.792Z","modifiedDate":"2022-10-21T14:34:40.792Z","privileges":["read","update","delete","publish"]},"qData":[]}
 {"qInfo":{"qId":"a9c3a586-3221-42ab-86d0-3096acfde25d","qType":"sheet"},"qMeta":{"title":"Auditoria: Sprints Com Problema","description":"","createdDate":"2022-07-01T14:23:15.105Z","modifiedDate":"2022-10-21T12:12:18.336Z","published":true,"publishTime":"2022-10-21T12:12:18.336Z","approved":false,"qSize":-1,"sourceObject":"","draftObject":"","_resourcetype":"app.object","_objecttype":"sheet","id":"a9c3a586-3221-42ab-86d0-3096acfde25d","owner":"auth0|5556ad34997d4ee0ba17448e3a37bf1ac66a0b417eb542e84af2f3860b4f0046","ownerId":"Lfj-55BV6u6BCk5iJKW708ngBZHBWsyg","privileges":["read","publish"]},"qData":[]}
@@ -234,6 +234,54 @@ MEASURES
 {"qInfo":{"qId":"pVmUW","qType":"measure"},"qMeta":{"title":"Realizado - Horas Realizadas Sprint","description":"","createdDate":"2022-07-01T14:23:15.129Z","modifiedDate":"2022-07-01T14:23:15.129Z","published":false,"publishTime":"1753-01-01T00:00:00.000Z","approved":false,"qSize":-1,"sourceObject":"","draftObject":"","_resourcetype":"app.object","_objecttype":"measure","id":"pVmUW","owner":"auth0|5556ad34997d4ee0ba17448e3a37bf1ac66a0b417eb542e84af2f3860b4f0046","ownerId":"Lfj-55BV6u6BCk5iJKW708ngBZHBWsyg","privileges":["read","update","delete","publish"],"tags":[]},"qData":[]}
 {"qInfo":{"qId":"qxWRMK","qType":"measure"},"qMeta":{"title":"Realizado - Percentual Conclus\u00e3o","description":"","createdDate":"2022-07-01T14:23:15.132Z","modifiedDate":"2022-07-01T14:23:15.132Z","published":false,"publishTime":"1753-01-01T00:00:00.000Z","approved":false,"qSize":-1,"sourceObject":"","draftObject":"","_resourcetype":"app.object","_objecttype":"measure","id":"qxWRMK","owner":"auth0|5556ad34997d4ee0ba17448e3a37bf1ac66a0b417eb542e84af2f3860b4f0046","ownerId":"Lfj-55BV6u6BCk5iJKW708ngBZHBWsyg","privileges":["read","update","delete","publish"],"tags":[]},"qData":[]}
 {"qInfo":{"qId":"wuPMC","qType":"measure"},"qMeta":{"title":"Overhead - Horas Dispon\u00edveis","description":"","createdDate":"2022-07-01T14:23:15.135Z","modifiedDate":"2022-07-01T14:23:15.135Z","published":false,"publishTime":"1753-01-01T00:00:00.000Z","approved":false,"qSize":-1,"sourceObject":"","draftObject":"","_resourcetype":"app.object","_objecttype":"measure","id":"wuPMC","owner":"auth0|5556ad34997d4ee0ba17448e3a37bf1ac66a0b417eb542e84af2f3860b4f0046","ownerId":"Lfj-55BV6u6BCk5iJKW708ngBZHBWsyg","privileges":["read","update","delete","publish"],"tags":[]},"qData":[]}
+
+MASTER OBJECTS
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
 
 VARIABLES
 {"qName":"vAmbiente","qDefinition":"Produ\u00e7\u00e3o","qMeta":{"privileges":["read","update","delete"]},"qInfo":{"qId":"291dac62-669e-427e-86bc-880a361012c0","qType":"variable"},"qData":[],"qIsScriptCreated":true}
